@@ -1,7 +1,6 @@
 services:
   - type: worker
-    name: telegram-bot
+    name: price-bot
     env: python
     plan: free
-    buildCommand: ""
     startCommand: python TLB.py
