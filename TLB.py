@@ -1,54 +1,40 @@
-import telebot
+from dotenv import load_dotenv
+import os
+import requests
+from telegram import Bot
+import schedule
+import time
 
-# توکن ربات تلگرام خود را جایگزین کنید
-API_TOKEN = '7679987839:AAFV6sETH78re1aDiS6fEHY8OJyK0aQGVGA'
+load_dotenv()
 
-# تنظیم پروکسی یا VPN
-telebot.apihelper.proxy = {'https': 'http://103.251.166.55:2096/sub/User1-Safe?format=json'}
+TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
-bot = telebot.TeleBot(API_TOKEN)
+def get_prices():
+    url = "https://api.tgju.org/v1/market/summary"
+    response = requests.get(url)
+    data = response.json()["results"]
 
-# مدیریت پیام "/start"
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.send_message(message.chat.id, "سلام! لطفاً پیام خود را ارسال کنید.")
+    prices = {
+        "دلار": data["price_dollar_rl"]["p"],
+        "تتر": data["price_tether_irr"]["p"],
+        "یورو": data["price_eur"]["p"],
+        "بیت‌کوین": data["crypto-bitcoin"]["p"],
+        "طلا ۱۸ عیار": data["geram18"]["p"],
+        "سکه امامی": data["sekeb"]["p"],
+        "سکه بهار آزادی": data["sekeh"]["p"]
+    }
 
-# مدیریت پیام‌های دریافتی از کاربران
-@bot.message_handler(func=lambda message: True)
-def forward_message_to_admin(message):
-    username = message.from_user.username if message.from_user.username else "کاربر بدون یوزرنیم"
-    # ارسال پیام کاربر به مدیر
-    bot.send_message(ADMIN_CHAT_ID, f"پیام جدید از @{username}:\n{message.text}")
-    # اطلاع‌رسانی به کاربر
-    bot.send_message(message.chat.id, "پیام شما به مدیر ارسال شد. لطفاً منتظر پاسخ باشید.")
+    return prices
 
-# مدیریت پیام‌های دریافتی از مدیر
-@bot.message_handler(func=lambda message: message.chat.id == int(ADMIN_CHAT_ID))
-def send_response_to_user(message):
-    try:
-        # پیام باید به فرمت "@username: پاسخ شما" باشد
-        if ":" in message.text:
-            username, response = message.text.split(":", 1)
-            username = username.strip().replace("@", "")  # حذف @ اگر وجود داشته باشد
-            response = response.strip()
+def send_prices_to_channel():
+    bot = Bot(token=TOKEN)
+    prices = get_prices()
+    message = "قیمت‌های امروز:\n\n" + "\n".join([f"{k}: {v} تومان" for k, v in prices.items()])
+    bot.send_message(chat_id=CHANNEL_ID, text=message)
 
-            # ارسال پاسخ به کاربر بر اساس یوزرنیم
-            user_found = False
-            for chat_id in bot.get_chat_ids():
-                user = bot.get_chat(chat_id)
-                if user.username == username:
-                    bot.send_message(user.id, response)
-                    user_found = True
-                    break
+schedule.every().day.at("12:00").do(send_prices_to_channel)  # زمان دلخواهتو بزار
 
-            if user_found:
-                bot.send_message(ADMIN_CHAT_ID, f"پاسخ شما برای @{username} ارسال شد.")
-            else:
-                bot.send_message(ADMIN_CHAT_ID, f"کاربر با یوزرنیم @{username} پیدا نشد.")
-        else:
-            bot.send_message(ADMIN_CHAT_ID, "لطفاً پیام را به فرمت '@username: پاسخ' ارسال کنید.")
-    except Exception as e:
-        bot.send_message(ADMIN_CHAT_ID, f"خطایی رخ داد: {e}")
-
-# اجرای ربات
-bot.polling()
+while True:
+    schedule.run_pending()
+    time.sleep(1)
