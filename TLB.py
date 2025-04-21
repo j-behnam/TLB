@@ -4,7 +4,7 @@ from telegram import Bot
 import schedule
 import time
 
-# خواندن متغیرهای محیطی که در Render تنظیم کردی
+# گرفتن توکن و آی‌دی کانال از محیط
 TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 
@@ -31,7 +31,8 @@ def send_prices_to_channel():
     message = "قیمت‌های امروز:\n\n" + "\n".join([f"{k}: {v} تومان" for k, v in prices.items()])
     bot.send_message(chat_id=CHANNEL_ID, text=message)
 
-schedule.every().day.at("12:15").do(send_prices_to_channel)  # زمان دلخواهتو بزار
+# تنظیم زمان ارسال پیام (مثلاً ساعت ۱۲ ظهر)
+schedule.every().day.at("12:16").do(send_prices_to_channel)
 
 while True:
     schedule.run_pending()
