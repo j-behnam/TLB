@@ -1,12 +1,10 @@
-from dotenv import load_dotenv
 import os
 import requests
 from telegram import Bot
 import schedule
 import time
 
-load_dotenv()
-
+# خواندن متغیرهای محیطی که در Render تنظیم کردی
 TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 
@@ -33,7 +31,7 @@ def send_prices_to_channel():
     message = "قیمت‌های امروز:\n\n" + "\n".join([f"{k}: {v} تومان" for k, v in prices.items()])
     bot.send_message(chat_id=CHANNEL_ID, text=message)
 
-schedule.every().day.at("12:00").do(send_prices_to_channel)  # زمان دلخواهتو بزار
+schedule.every().day.at("12:15").do(send_prices_to_channel)  # زمان دلخواهتو بزار
 
 while True:
     schedule.run_pending()
